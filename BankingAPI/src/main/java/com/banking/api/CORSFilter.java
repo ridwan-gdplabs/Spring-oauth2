@@ -19,6 +19,9 @@ import org.springframework.stereotype.Component;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CORSFilter implements Filter {
 
+    private static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
+    
+    @Override
     public void doFilter(ServletRequest req, ServletResponse res,
             FilterChain chain) throws IOException, ServletException {
         HttpServletResponse response = (HttpServletResponse) res;
@@ -27,10 +30,10 @@ public class CORSFilter implements Filter {
         response.setHeader("Access-Control-Allow-Methods",
                 "POST, GET, PUT, PATCH, DELETE, OPTIONS");
         response.setHeader("Access-Control-Max-Age", "3600");
-        response.setHeader("Access-Control-Allow-Headers", "x-requested-with");
-        response.addHeader("Access-Control-Allow-Headers", "Authorization");
-        response.addHeader("Access-Control-Allow-Headers", "Accept");
-        response.addHeader("Access-Control-Allow-Headers", "Content-Type");
+        response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, "x-requested-with");
+        response.addHeader(ACCESS_CONTROL_ALLOW_HEADERS, "Authorization");
+        response.addHeader(ACCESS_CONTROL_ALLOW_HEADERS, "Accept");
+        response.addHeader(ACCESS_CONTROL_ALLOW_HEADERS, "Content-Type");
 
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             response.setStatus(HttpServletResponse.SC_OK);
@@ -39,9 +42,11 @@ public class CORSFilter implements Filter {
         }
     }
 
+    @Override
     public void init(FilterConfig filterConfig) {
     }
 
+    @Override
     public void destroy() {
     }
 

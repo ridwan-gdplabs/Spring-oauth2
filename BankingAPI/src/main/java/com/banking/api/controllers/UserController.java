@@ -25,7 +25,6 @@ public class UserController {
     @RequestMapping(method=RequestMethod.GET)
     public User getUserData() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        
         return userRepository.findOne(auth.getName());
     }
 }

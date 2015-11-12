@@ -126,8 +126,8 @@ public class BankingApiApplicationTests {
     }
     
     public void addAuthorities() {
-        authority = new Authority("user1", "ROLE_user");
-        authorityRepository.save(authority);
+//        authority = new Authority("user1", "ROLE_user");
+//        authorityRepository.save(authority);
     }
     
     public void addTransfer() {

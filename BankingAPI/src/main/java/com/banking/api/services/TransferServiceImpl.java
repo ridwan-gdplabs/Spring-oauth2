@@ -20,6 +20,7 @@ public class TransferServiceImpl implements TransferService {
     @Autowired
     private TransferRepository transferRepository;
     
+    @Override
     public Transfer doTransfer(Account sender, Account recipient, double amount) {
         double senderBalance = sender.getBalance();
         
