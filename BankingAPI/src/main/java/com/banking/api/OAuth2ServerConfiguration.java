@@ -1,5 +1,8 @@
 package com.banking.api;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -194,14 +197,18 @@ public class OAuth2ServerConfiguration {
                 writeAccess = write + " and hasRole('"
                         + endpoint.getAuthority().getAuthority() + "')";
 
-                http.requestMatchers().antMatchers(endpoint.getAntPattern())
-                        .and().authorizeRequests()
-                        .antMatchers(HttpMethod.GET, endpoint.getAntPattern())
+                List<String> endpointList = new ArrayList<>();
+                endpointList.add(endpoint.getAntPattern());
+                String endpointArray[] = (String[]) endpointList.toArray();
+
+                http.requestMatchers().antMatchers(endpointArray).and()
+                        .authorizeRequests()
+                        .antMatchers(HttpMethod.GET, endpointArray)
                         .access(readAndWriteAccess)
-                        .antMatchers(HttpMethod.POST, endpoint.getAntPattern())
+                        .antMatchers(HttpMethod.POST, endpointArray)
                         .access(writeAccess);
             }
-            
+
         }
     }
 }
