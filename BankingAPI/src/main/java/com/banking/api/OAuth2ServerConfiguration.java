@@ -29,10 +29,9 @@ import org.springframework.security.oauth2.provider.code.AuthorizationCodeServic
 import org.springframework.security.oauth2.provider.code.JdbcAuthorizationCodeServices;
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-import com.banking.api.models.oauth2.Endpoint;
-import com.banking.api.repositories.oauth2.EndpointRepository;
+import com.banking.api.models.oauth2.Authority;
+import com.banking.api.repositories.oauth2.AuthorityRepository;
 
 @Configuration
 public class OAuth2ServerConfiguration {
@@ -60,22 +59,6 @@ public class OAuth2ServerConfiguration {
         @Override
         public void configure(AuthenticationManagerBuilder auth)
                 throws Exception {
-            // auth.authenticationProvider(new AuthenticationProvider() {
-            //
-            // @Override
-            // public boolean supports(Class<?> authentication) {
-            // // TODO Auto-generated method stub
-            // return false;
-            // }
-            //
-            // @Override
-            // public Authentication authenticate(Authentication authentication)
-            // throws AuthenticationException {
-            //
-            // // TODO Auto-generated method stub
-            // return null;
-            // }
-            // });
             // auth.jdbcAuthentication().dataSource(dataSource).passwordEncoder(passwordEncoder());
             auth.userDetailsService(userDetailsService()).passwordEncoder(
                     passwordEncoder());
@@ -104,6 +87,7 @@ public class OAuth2ServerConfiguration {
             jdbcDaoImpl.setEnableGroups(true);
             jdbcDaoImpl
                     .setGroupAuthoritiesByUsernameQuery(groupAuthoritiesQuery);
+            jdbcDaoImpl.setEnableAuthorities(false);
             return jdbcDaoImpl;
         }
 
@@ -156,7 +140,7 @@ public class OAuth2ServerConfiguration {
             ResourceServerConfigurerAdapter {
 
         @Autowired
-        private EndpointRepository endpointRepository;
+        private AuthorityRepository authorityRepository;
 
         @Autowired
         private TokenStore tokenStore;
@@ -169,46 +153,59 @@ public class OAuth2ServerConfiguration {
 
         @Override
         public void configure(HttpSecurity http) throws Exception {
-            String read = "#oauth2.isUser() and #oauth2.hasScope('"
-                    + Scope.READ.getLabel() + "')";
-            String readAndWrite = "#oauth2.isUser() and (#oauth2.hasScope('"
+            String readOrWrite = "#oauth2.isUser() and (#oauth2.hasScope('"
                     + Scope.READ.getLabel() + "') or #oauth2.hasScope('"
                     + Scope.WRITE.getLabel() + "'))";
             String write = "#oauth2.isUser() and #oauth2.hasScope('"
                     + Scope.WRITE.getLabel() + "')";
 
-            //
-            // http.requestMatchers()
-            // .antMatchers("/me", "/accounts", "/accounts/*/transfers")
-            // .and()
-            // .authorizeRequests()
-            // .antMatchers(HttpMethod.GET, "/me", "/accounts",
-            // "/accounts/*/transfers")
-            // .access(readAndWrite)
-            // .antMatchers(HttpMethod.POST, "/me", "/accounts",
-            // "/accounts/*/transfers").access(write);
-
-            String readAndWriteAccess = "";
+            String readOrWriteAccess = "";
             String writeAccess = "";
-            Iterable<Endpoint> endpoints = endpointRepository.findAll();
-            for (Endpoint endpoint : endpoints) {
-                readAndWriteAccess = readAndWrite + " and hasRole('"
-                        + endpoint.getAuthority().getAuthority() + "')";
-                writeAccess = write + " and hasRole('"
-                        + endpoint.getAuthority().getAuthority() + "')";
+            List<String> readUrl = new ArrayList<String>();
+            List<String> writeUrl = new ArrayList<String>();
+            List<String> requestUrl = new ArrayList<String>();
 
-                List<String> endpointList = new ArrayList<>();
-                endpointList.add(endpoint.getAntPattern());
-                String endpointArray[] = (String[]) endpointList.toArray();
+            Iterable<Authority> authorities = authorityRepository.findAll();
+            for (Authority authority : authorities) {
+                requestUrl.add(authority.getAntPattern());
 
-                http.requestMatchers().antMatchers(endpointArray).and()
-                        .authorizeRequests()
-                        .antMatchers(HttpMethod.GET, endpointArray)
-                        .access(readAndWriteAccess)
-                        .antMatchers(HttpMethod.POST, endpointArray)
-                        .access(writeAccess);
+                if ("READ".equals(authority.getScope())) {
+                    if ("".equals(readOrWriteAccess)) {
+                        readOrWriteAccess = " hasRole('"
+                                + authority.getAuthority() + "')";
+                    } else {
+                        readOrWriteAccess += " or hasRole('"
+                                + authority.getAuthority() + "')";
+                    }
+                    readUrl.add(authority.getAntPattern());
+                } else if ("WRITE".equals(authority.getScope())) {
+                    if ("".equals(writeAccess)) {
+                        writeAccess = " hasRole('" + authority.getAuthority()
+                                + "')";
+                    } else {
+                        writeAccess += " or hasRole('"
+                                + authority.getAuthority() + "')";
+                    }
+                    writeUrl.add(authority.getAntPattern());
+                }
             }
 
+            readOrWriteAccess = readOrWrite + " and (" + readOrWriteAccess
+                    + ")";
+            writeAccess = write + " and (" + writeAccess + ")";
+            System.out.println(readOrWriteAccess);
+            System.out.println(writeAccess);
+
+            String requestUrlArray[] = requestUrl.toArray(new String[0]);
+            String readUrlArray[] = readUrl.toArray(new String[0]);
+            String writeUrlArray[] = writeUrl.toArray(new String[0]);
+
+            http.requestMatchers().antMatchers(requestUrlArray).and()
+                    .authorizeRequests()
+                    .antMatchers(HttpMethod.GET, readUrlArray)
+                    .access(readOrWriteAccess)
+                    .antMatchers(HttpMethod.POST, writeUrlArray)
+                    .access(writeAccess);
         }
     }
 }

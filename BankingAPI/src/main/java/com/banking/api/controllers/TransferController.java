@@ -21,7 +21,6 @@ import com.banking.api.errors.LoopbackTransferException;
 import com.banking.api.http.requests.TransferPost;
 import com.banking.api.models.Account;
 import com.banking.api.models.Transfer;
-import com.banking.api.models.TransferTest;
 import com.banking.api.models.User;
 import com.banking.api.repositories.AccountRepository;
 import com.banking.api.repositories.TransferRepository;
@@ -33,7 +32,7 @@ import com.banking.api.services.TransferService;
 @RequestMapping("accounts/{accountId}/transfers")
 public class TransferController {
     
-    private static final String ROLE_ADMIN = "ROLE_admin";
+    private static final String ROLE_ADMIN = "ROLE_ADMIN";
 
     private AccountRepository accountRepository;
     private TransferRepository transferRepository;
